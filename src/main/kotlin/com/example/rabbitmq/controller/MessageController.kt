@@ -9,6 +9,15 @@ import org.springframework.web.bind.annotation.*
 class MessageController(
     private val messageProducer: MessageProducer
 ) {
+    @GetMapping("/fail")
+    fun testDlq(): ResponseEntity<String> {
+        return try {
+            messageProducer.senMessageForFail()
+            ResponseEntity.ok("RabbitMQ connection test successful")
+        } catch (e: Exception) {
+            ResponseEntity.internalServerError().body("Consume by DLQ: ${e.message}")
+        }
+    }
 
     @PostMapping("/send")
     fun sendMessage(@RequestBody message: Map<String, Any>): ResponseEntity<String> {

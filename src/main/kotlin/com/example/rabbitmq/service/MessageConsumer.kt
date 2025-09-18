@@ -4,6 +4,7 @@ import com.example.rabbitmq.config.RabbitConfig
 import org.slf4j.LoggerFactory
 import org.springframework.amqp.rabbit.annotation.RabbitListener
 import org.springframework.stereotype.Service
+import java.lang.IllegalStateException
 
 @Service
 class MessageConsumer {
@@ -19,5 +20,12 @@ class MessageConsumer {
     private fun processMessage(message: String) {
         // 실제 비즈니스 로직 구현
         logger.info("Processing message: $message")
+        if(message.contains("#dlq#")) throw IllegalStateException()
+    }
+
+    @RabbitListener(queues = [RabbitConfig.DLQ_QUEUE])
+    fun consumeDlq(message: String) {
+        logger.info("message: ${message}")
+        println("DLQ received: $message")
     }
 }

@@ -11,6 +11,10 @@ import org.springframework.context.annotation.Configuration
 class RabbitConfig {
 
     companion object {
+        const val DLX_EXCHANGE = "dlx.exchange"
+        const val DLQ_QUEUE = "dlq.queue"
+        const val DLQ_ROUTING_KEY = "dlq.queue.key"
+
         const val EXCHANGE_NAME = "test.exchange"
         const val QUEUE_NAME = "test.queue"
         const val ROUTING_KEY = "test.routing.key"
@@ -22,8 +26,21 @@ class RabbitConfig {
     }
 
     @Bean
+    fun dlxExchange(): TopicExchange {
+        return TopicExchange(DLX_EXCHANGE)
+    }
+
+    @Bean
     fun queue(): Queue {
-        return QueueBuilder.durable(QUEUE_NAME).build()
+        return QueueBuilder.durable(QUEUE_NAME)
+            .withArgument("x-dead-letter-exchange", DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", DLQ_ROUTING_KEY)
+            .build()
+    }
+
+    @Bean
+    fun dlqQueue(): Queue {
+        return QueueBuilder.durable(DLQ_QUEUE).build()
     }
 
     @Bean
@@ -32,6 +49,14 @@ class RabbitConfig {
             .bind(queue())
             .to(exchange())
             .with(ROUTING_KEY)
+    }
+
+    @Bean
+    fun dlqQueueBinding(): Binding {
+        return BindingBuilder
+            .bind(dlqQueue())
+            .to(dlxExchange())
+            .with(DLQ_ROUTING_KEY)
     }
 
     @Bean
